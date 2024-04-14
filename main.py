@@ -24,19 +24,33 @@ with Presence(client_id) as presence:
     while True:
         print_info = klipper.get_printer_status(printer_ip, printer_port)   
         if print_info["state"] == "printing":
-            presence.set(
-                {
-                    "state": f"Printing {print_info['filename']}",
-                    "details": f"{print_info['progresspercent']}% complete!",
-                    "timestamps": {"end": round(time.time() + print_info["eta"], 1)},
-                    "assets": {
-                        "large_image": "klipperlogo",
-                        "large_text": f"Nozzle temp: {print_info['nozzletemp']}℃, Bed temp: {print_info['bedtemp']}℃",
-                        "small_image": art_assets["Green"],
-                        "small_text": "Looking good!",
-                    },
-                }
-            )
+            #if the time doesnt change, it means it's calibrating
+            if print_info["print_duration"] == 0:
+                presence.set(
+                    {
+                        "state": f"Calibrating...",
+                        "details": f"Please wait...",
+                        "assets": {
+                            "large_image": "klipperlogo",
+                            "small_image": art_assets["Orange"],
+                            "small_text": "Calibrating...",
+                        },
+                    }
+                )
+            else:
+                presence.set(
+                    {
+                        "state": f"3D Printing {print_info['filename']} with FlyingBear Reborn 2",
+                        "details": f"{print_info['progresspercent']}% complete!",
+                        "timestamps": {"end": round(time.time() + print_info["eta"], 1)},
+                        "assets": {
+                            "large_image": "klipperlogo",
+                            "large_text": f"Nozzle temp: {print_info['nozzletemp']}℃, Bed temp: {print_info['bedtemp']}℃, Filament: {print_info['filament']}",
+                            "small_image": art_assets["Green"],
+                            "small_text": "Looking good!",
+                        },
+                    }
+                )
         elif print_info["state"] == "standby":
             presence.set(
                 {

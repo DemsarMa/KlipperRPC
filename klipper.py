@@ -21,15 +21,20 @@ def get_printer_status(printer_ip, printer_port):
         filename = status["result"]["status"]["print_stats"]["filename"]
         state = status["result"]["status"]["print_stats"]["state"]
         status_message = status["result"]["status"]["print_stats"]["message"]
+        print_duration = status["result"]["status"]["print_stats"]["print_duration"]
 
         # Query printer for file metadata
         metadata = requests.get(f"http://{printer_ip}/server/files/metadata?filename={urllib.parse.quote(filename)}").json()
-        if metadata.status_code == 200:
-            eta = metadata["result"]["estimated_time"] - (progress * metadata["result"]["estimated_time"])
+        if "result" in metadata:
+            filament = metadata["result"]["filament_type"]
+            if metadata["result"]["estimated_time"] != 0:
+                eta = metadata["result"]["estimated_time"] - (progress * metadata["result"]["estimated_time"])
+            else:
+                eta = "N/A"
         else:
+            filament = "N/A"
             eta = "N/A"
 
-        # Query printer for temps
         temps = requests.get(f"http://{printer_ip}/server/temperature_store?include_monitors=false").json()
         bed_temp = temps["result"]["heater_bed"]["temperatures"][len(temps["result"]["heater_bed"]["temperatures"])-1]
         nozzle_temp = temps["result"]["extruder"]["temperatures"][len(temps["result"]["extruder"]["temperatures"])-1]
@@ -41,9 +46,11 @@ def get_printer_status(printer_ip, printer_port):
                     "filename": filename,
                     "bedtemp": bed_temp,
                     "nozzletemp": nozzle_temp,
+                    "filament": filament,
                     "state": state,
                     "statusmessage": status_message,
-                    "printtime": print_time
+                    "printtime": print_time,
+                    "print_duration": print_duration
             }
     else:
         print("KLIPPER WARNING: Printer is unreachable.")
